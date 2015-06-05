@@ -1,15 +1,25 @@
-SRCS = thread_test.c xl_eventloop.c testcase.c xl_event_test.c
+SRCS = testcase_runner.c eventloop_runner.c testcase_utils.c async_test.c
 CFLAGS = -Wall -Wextra -Werror -pedantic -g
-LDFLAGS = -pthread -lxenlight
+LDFLAGS = -Wl,-export-dynamic
+LDLIBS = -pthread -lxenctrl -lxlutil -lxenlight -ldl
+TESTS = $(wildcard test_*.c)
+ALL_SRCS = $(SRCS) $(TESTS)
 
-all: xl_event_test
-xl_event_test: $(SRCS:.c=.o)
+.PHONY: all
+all: async_test $(TESTS:.c=.so)
+async_test: $(SRCS:.c=.o)
+
+
+test_%.o: CFLAGS += -fPIC
+
+test_%.so: test_%.o
+	$(CC) -shared $< -o $@
 
 %.d: %.c
 	$(CC) -M $< > $@
 
 .PHONY: clean
 clean:
-	rm -f $(SRCS:.c=.o)  $(SRCS:.c=.d) xl_event_test
+	rm -f $(ALL_SRCS:.c=.o) $(ALL_SRCS:.c=.d) $(TESTS:.c=.so) async_test
 
--include $(SRCS:.c=.d)
+-include $(ALL_SRCS:.c=.d)

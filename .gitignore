@@ -1,3 +1,4 @@
 *.o
+*.so
 *.d
-xl_event_test
+async_test
