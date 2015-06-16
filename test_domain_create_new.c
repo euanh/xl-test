@@ -5,19 +5,44 @@
 #include "eventloop_runner.h"
 #include "testcase_utils.h"
 
+
 /*
- TODO:
-   libxl__bootloader_run may add a cancellable point, but we don't enter
-   it because we provide the kernel and ramdisk along with the root image.
+ * This test calls libxl_domain_create_new() repeatedly, cancelling
+ * it at different points in its lifecycle.   
+ * 
+ * Preconditions:
+ *   No existing domain is called test_domain_create_new.
+ * 
+ * Postconditions:
+ *   After cancellation, the partly created domain can be cleaned
+ *   up by calling libxl_domain_destroy.
+ *
+ *   After cancellation and cleanup, another domain with the same
+ *   name can be created.
+ *
+ * Improvements:
+ *   Extracting the kernel and ramdisk from the root image, rather
+ *   than supplying them directly, may provide another early 
+ *   cancellation point.
  */
 
-
-#if 0
-void wait_or_exit(struct test *tc, libxl_domain_config *dc, int domid)
+int wait_for_events(struct test *tc, struct event *ev, int count)
 {
+    /* Wait for some number of events before cancelling.
+       Eventloop timeouts are ignored as they could happen at
+       any time.  The test ends if the callback occurs while
+       we are still waiting for an event - after the callback,
+       the API call can no longer be cancelled.
+     */
+    int i;
+    for (i = 0; i < count; i++) {
+        wait_for(tc, ~EV_EVENTLOOP, ev);
+        if (ev->type == EV_LIBXL_CALLBACK) {
+            return 0;
+        }
+    }
+    return 1;
 }
-#endif
-
 
 void teardown(struct test *tc, libxl_domain_config *dc, int domid)
 {
@@ -26,18 +51,15 @@ void teardown(struct test *tc, libxl_domain_config *dc, int domid)
 
 }
 
-
 void *testcase(struct test *tc)
 {
-    int count = 0;
+    int count;
 
-    while (1) {
+    for (count = 1; count < 100; count ++) {
         uint32_t domid;
         libxl_domain_config dc;
         struct event ev;
-        int i;
 
-        count++;
         printf("\n****** Will cancel after %d events ******\n", count);
 
         init_domain_config(&dc, "test_domain_create_new",
@@ -48,19 +70,10 @@ void *testcase(struct test *tc)
 
         do_domain_create(tc, &dc, &domid);
 
-        /* Wait for some number of events before cancelling.
-           Eventloop timeouts are ignored as they could happen at
-           any time.  The test ends if the callback occurs while
-           we are still waiting for an event - after the callback,
-           the API call can no longer be cancelled.
-         */
-        for (i = 0; i < count; i++) {
-            wait_for(tc, ~EV_EVENTLOOP, &ev);
-            if (ev.type == EV_LIBXL_CALLBACK) {
-		teardown(tc, &dc, domid);
-		test_exit();
-            }
-        }
+	if (!wait_for_events(tc, &ev, count)) {
+                teardown(tc, &dc, domid);
+		break;
+	}
 
         libxl_ao_cancel(tc->ctx, &tc->ao_how);
         wait_for(tc, EV_LIBXL_CALLBACK, &ev);
