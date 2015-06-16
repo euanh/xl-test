@@ -11,19 +11,27 @@
    it because we provide the kernel and ramdisk along with the root image.
  */
 
-#if 0
-void cleanup_and_exit(libxl_domain_config * dc)
-{
 
+#if 0
+void wait_or_exit(struct test *tc, libxl_domain_config *dc, int domid)
+{
 }
 #endif
+
+
+void teardown(struct test *tc, libxl_domain_config *dc, int domid)
+{
+    libxl_domain_config_dispose(dc);
+    libxl_domain_destroy(tc->ctx, domid, 0);
+
+}
+
 
 void *testcase(struct test *tc)
 {
     int count = 0;
-    int run = 1;
 
-    while (run) {
+    while (1) {
         uint32_t domid;
         libxl_domain_config dc;
         struct event ev;
@@ -49,29 +57,20 @@ void *testcase(struct test *tc)
         for (i = 0; i < count; i++) {
             wait_for(tc, ~EV_EVENTLOOP, &ev);
             if (ev.type == EV_LIBXL_CALLBACK) {
-                run = 0;
-                break;
+		teardown(tc, &dc, domid);
+		test_exit();
             }
-            if (run) {
-                libxl_ao_cancel(tc->ctx, &tc->ao_how);
-                wait_for(tc, EV_LIBXL_CALLBACK, &ev);
-            }
-
-            printf("domid: %d\n", domid);
-            libxl_domain_config_dispose(&dc);
-
-            /* If cancellation succeeded, the domain will probably have
-               been created with all of its associated devices attached, but
-               the device emulator will probably not have been spawned - no
-               qemu-system-i386 process with -xen-domid equal to our domid 
-               will exist */
-
-            assert(!libxl_domain_info(tc->ctx, NULL, domid));
-            libxl_domain_destroy(tc->ctx, domid, 0);
-            /* wait_for(tc, EV_LIBXL_CALLBACK, &ev); */
         }
+
+        libxl_ao_cancel(tc->ctx, &tc->ao_how);
+        wait_for(tc, EV_LIBXL_CALLBACK, &ev);
+
+        printf("domid: %d\n", domid);
+        assert(!libxl_domain_info(tc->ctx, NULL, domid));
+
+        teardown(tc, &dc, domid);
     }
 
-    eventloop_halt();
-    pthread_exit(NULL);
+    test_exit();
+    return NULL;
 }

@@ -55,6 +55,7 @@ struct test {
 int test_spawn(struct test *tc, xentoollog_logger * logger,
                void *(*fn) (struct test *));
 void test_join(struct test *tc);
+void test_exit();
 void test_destroy(struct test *tc);
 int send_event(struct test *tc, struct event ev);
 void recv_event(struct test *tc, struct event *ev);

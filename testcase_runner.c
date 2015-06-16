@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "testcase_runner.h"
+#include "eventloop_runner.h"
 
 enum { RX = 0, TX = 1 };
 
@@ -43,6 +44,11 @@ void test_destroy(struct test *tc)
     }
 
     libxl_ctx_free(tc->ctx);
+}
+
+void test_exit() {
+	eventloop_halt();
+	pthread_exit(NULL);
 }
 
 int send_event(struct test *tc, struct event ev)
