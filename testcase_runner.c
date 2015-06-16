@@ -46,9 +46,10 @@ void test_destroy(struct test *tc)
     libxl_ctx_free(tc->ctx);
 }
 
-void test_exit() {
-	eventloop_halt();
-	pthread_exit(NULL);
+void test_exit()
+{
+    eventloop_halt();
+    pthread_exit(NULL);
 }
 
 int send_event(struct test *tc, struct event ev)
@@ -79,6 +80,21 @@ wait_for_n(struct test *tc, enum event_type mask, int count, struct event *ev)
     while (count--) {
         wait_for(tc, mask, ev);
     }
+}
+
+/* Wait until an event matching the mask is posted, or count other events
+   are posted.  Returns 1 if the matching event is posted, 0 otherwise.
+ */
+int wait_until_n(struct test *tc, enum event_type mask, int count,
+                 struct event *ev)
+{
+    while (count--) {
+        wait_for(tc, ~EV_EVENTLOOP, ev);
+        if (ev->type & mask) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 int send_fd_event(struct test *tc, int fd)
