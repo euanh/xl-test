@@ -25,7 +25,6 @@
  *   cancellation point.
  */
 
-
 void teardown(struct test *tc, libxl_domain_config * dc, int domid)
 {
     libxl_domain_config_dispose(dc);
@@ -41,25 +40,52 @@ void *testcase(struct test *tc)
         uint32_t domid;
         libxl_domain_config dc;
         struct event ev;
+        int rc;
 
         printf("\n****** Will cancel after %d events ******\n", count);
 
         init_domain_config(&dc, "test_domain_create_new",
                            "/root/vmlinuz-4.0.4-301.fc22.x86_64",
-                           "/root/foobar.img",
+                           "/root/initrd.xen-4.0.4-301.fc22.x86_64",
                            "/root/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
                            "/root/init.iso");
 
         do_domain_create(tc, &dc, &domid);
 
         if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev)) {
+            /* The API call returned before we could cancel it.
+               It should have returned successfully.
+             */
+            printf("libxl_domain_create_new returned %d\n",
+                   ev.u.callback_event.rc);
+            assert(ev.u.callback_event.rc == 0);
+
+            /* No operation in progress - cancelling should return an error */
+            rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
+            printf("libxl_ao_cancel returned %d\n", rc);
+            assert(rc == ERROR_NOTFOUND);
+
             teardown(tc, &dc, domid);
             break;
         }
 
-        libxl_ao_cancel(tc->ctx, &tc->ao_how);
-        wait_for(tc, EV_LIBXL_CALLBACK, &ev);
+        rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
 
+        /* Calling cancel on a cancellable operation should not return an
+           error, unless the operation happened to complete in the meantime.
+         */
+        printf("libxl_ao_cancel returned %d\n", rc);
+        assert(rc == ERROR_NOTFOUND || rc == 0);
+
+        /* The API call's return code should indicate that it was cancelled */
+        wait_for(tc, EV_LIBXL_CALLBACK, &ev);
+        printf("libxl_domain_create_new returned %d\n",
+               ev.u.callback_event.rc);
+        assert(ev.u.callback_event.rc == ERROR_CANCELLED
+               || ev.u.callback_event.rc == 0);
+
+        /* Although we cancelled, some domain configuration will have 
+           been created. */
         printf("domid: %d\n", domid);
         assert(!libxl_domain_info(tc->ctx, NULL, domid));
 

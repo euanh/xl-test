@@ -15,7 +15,7 @@ void *testcase(struct test *tc)
 
     init_domain_config(&dc, "test_domain_suspend",
                        "/root/vmlinuz-4.0.4-301.fc22.x86_64",
-                       "/root/foobar.img",
+                       "/root/initrd.xen-4.0.4-301.fc22.x86_64",
                        "/root/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
                        "/root/init.iso");
     do_domain_create(tc, &dc, &domid);
