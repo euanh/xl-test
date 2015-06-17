@@ -31,10 +31,10 @@ void *testcase(struct test *tc)
     libxl_domain_config dc;
 
     init_domain_config(&dc, "test_domain_create_new",
-                       "/root/vmlinuz-4.0.4-301.fc22.x86_64",
-                       "/root/initrd.xen-4.0.4-301.fc22.x86_64",
-                       "/root/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
-                       "/root/cloudinit.iso");
+                       "resources/vmlinuz-4.0.4-301.fc22.x86_64",
+                       "resources/initrd.xen-4.0.4-301.fc22.x86_64",
+                       "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
+                       "resources/cloudinit.iso");
 
     for (count = 1; count < 100; count++) {
         uint32_t domid;
