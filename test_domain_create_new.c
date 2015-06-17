@@ -25,30 +25,23 @@
  *   cancellation point.
  */
 
-void teardown(struct test *tc, libxl_domain_config * dc, int domid)
-{
-    libxl_domain_config_dispose(dc);
-    libxl_domain_destroy(tc->ctx, domid, 0);
-
-}
-
 void *testcase(struct test *tc)
 {
     int count;
+    libxl_domain_config dc;
+
+    init_domain_config(&dc, "test_domain_create_new",
+                       "/root/vmlinuz-4.0.4-301.fc22.x86_64",
+                       "/root/initrd.xen-4.0.4-301.fc22.x86_64",
+                       "/root/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
+                       "/root/cloudinit.iso");
 
     for (count = 1; count < 100; count++) {
         uint32_t domid;
-        libxl_domain_config dc;
         struct event ev;
         int rc;
 
         printf("\n****** Will cancel after %d events ******\n", count);
-
-        init_domain_config(&dc, "test_domain_create_new",
-                           "/root/vmlinuz-4.0.4-301.fc22.x86_64",
-                           "/root/initrd.xen-4.0.4-301.fc22.x86_64",
-                           "/root/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
-                           "/root/init.iso");
 
         do_domain_create(tc, &dc, &domid);
 
@@ -65,7 +58,7 @@ void *testcase(struct test *tc)
             printf("libxl_ao_cancel returned %d\n", rc);
             assert(rc == ERROR_NOTFOUND);
 
-            teardown(tc, &dc, domid);
+            libxl_domain_destroy(tc->ctx, domid, 0);
             break;
         }
 
@@ -89,9 +82,10 @@ void *testcase(struct test *tc)
         printf("domid: %d\n", domid);
         assert(!libxl_domain_info(tc->ctx, NULL, domid));
 
-        teardown(tc, &dc, domid);
+        libxl_domain_destroy(tc->ctx, domid, 0);
     }
 
+    libxl_domain_config_dispose(&dc);
     test_exit();
     return NULL;
 }
