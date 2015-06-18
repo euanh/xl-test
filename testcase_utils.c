@@ -1,5 +1,3 @@
-#include <fcntl.h>
-#include <libxl.h>
 #include <stdlib.h>
 
 #include "testcase_utils.h"
@@ -70,12 +68,10 @@ do_domain_create(struct test *t, libxl_domain_config * dc,
     return libxl_domain_create_new(t->ctx, dc, domid_out, &t->ao_how, 0);
 }
 
-int do_domain_suspend(struct test *t, uint32_t domid)
+int do_domain_suspend(struct test *t, uint32_t domid, int fd)
 {
-    int fd = open("/tmp/suspend", O_RDWR | O_CREAT | O_TRUNC, 0644);  /* XXX leaked */
-
     t->ao_how.callback = generic_callback;
     t->ao_how.u.for_callback = t;
 
-    return libxl_domain_suspend(t->ctx, domid, fd, 0, &t->ao_how);
+    return libxl_domain_suspend(t->ctx, domid, fd, LIBXL_SUSPEND_LIVE, &t->ao_how);
 }

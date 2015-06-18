@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <libxl.h>
 #include <libxl_event.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "testcase_runner.h"
 #include "eventloop_runner.h"
 #include "testcase_utils.h"
@@ -48,15 +50,23 @@ void *testcase(struct test *tc)
        least the next fd event on a different fd */
     for (count = 1; count < 100; count++) {
         int rc;
+        int fd;
+        char template[] = "/tmp/xltest-XXXXXX";
 
         printf("\n****** Will cancel after %d events ******\n", count);
 
-        do_domain_suspend(tc, domid);
+        fd = mkstemp(template);
+        if (fd < 0) {
+            perror("mkstemp");
+            break;
+        }
+        do_domain_suspend(tc, domid, fd);
 
         if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev)) {
             /* The API call returned before we could cancel it.
                It should have returned successfully.
              */
+            close(fd);
             printf("libxl_domain_suspend returned %d\n",
                    ev.u.callback_event.rc);
             assert(ev.u.callback_event.rc == 0);
@@ -79,6 +89,7 @@ void *testcase(struct test *tc)
 
         /* The API call's return code should indicate that it was cancelled */
         wait_for(tc, EV_LIBXL_CALLBACK, &ev);
+        close(fd);
         printf("libxl_domain_suspend returned %d\n",
                ev.u.callback_event.rc);
         assert(ev.u.callback_event.rc == ERROR_CANCELLED
