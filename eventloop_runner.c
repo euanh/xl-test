@@ -68,7 +68,6 @@ void eventloop_start(struct test *tc)
 
         if (rc == 0) {
             send_eventloop_timeout(tc);
-            continue;
         }
 
         for (;;) {
