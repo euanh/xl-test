@@ -50,24 +50,24 @@ void *testcase(struct test *tc)
        least the next fd event on a different fd */
     for (count = 1; count < 100; count++) {
         int rc;
-        int fd;
-        char template[] = "/tmp/xltest-XXXXXX";
+        FILE *suspend_file;
+        int suspend_fd;
 
         printf("\n****** Will cancel after %d events ******\n", count);
 
-        fd = mkstemp(template);
-        if (fd < 0) {
-            perror("mkstemp");
+        suspend_file = tmpfile();
+        if (!suspend_file) {
+            perror("tmpfile");
             break;
         }
-        do_domain_suspend(tc, domid, fd);
+        suspend_fd = fileno(suspend_file);
+        do_domain_suspend(tc, domid, suspend_fd);
 
         if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev)) {
             /* The API call returned before we could cancel it.
                It should have returned successfully.
              */
-            close(fd);
-            unlink(template);
+            fclose(suspend_file);
             printf("libxl_domain_suspend returned %d\n",
                    ev.u.callback_event.rc);
             assert(ev.u.callback_event.rc == 0);
@@ -90,9 +90,7 @@ void *testcase(struct test *tc)
 
         /* The API call's return code should indicate that it was cancelled */
         wait_for(tc, EV_LIBXL_CALLBACK, &ev);
-        close(fd);
-        printf("Removing %s\n", template);
-        unlink(template);
+        fclose(suspend_file);
         printf("libxl_domain_suspend returned %d\n",
                ev.u.callback_event.rc);
         assert(ev.u.callback_event.rc == ERROR_CANCELLED
