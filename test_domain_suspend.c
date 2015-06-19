@@ -67,6 +67,7 @@ void *testcase(struct test *tc)
                It should have returned successfully.
              */
             close(fd);
+            unlink(template);
             printf("libxl_domain_suspend returned %d\n",
                    ev.u.callback_event.rc);
             assert(ev.u.callback_event.rc == 0);
@@ -90,6 +91,8 @@ void *testcase(struct test *tc)
         /* The API call's return code should indicate that it was cancelled */
         wait_for(tc, EV_LIBXL_CALLBACK, &ev);
         close(fd);
+        printf("Removing %s\n", template);
+        unlink(template);
         printf("libxl_domain_suspend returned %d\n",
                ev.u.callback_event.rc);
         assert(ev.u.callback_event.rc == ERROR_CANCELLED
