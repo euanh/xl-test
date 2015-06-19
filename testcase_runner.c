@@ -85,7 +85,7 @@ wait_for_n(struct test *tc, enum event_type mask, int count, struct event *ev)
 /* Wait until an event matching the mask is posted, or count other events
    are posted.  Returns 1 if the matching event is posted, 0 otherwise.
  */
-int wait_until_n(struct test *tc, enum event_type mask, int count,
+bool wait_until_n(struct test *tc, enum event_type mask, int count,
                  struct event *ev)
 {
     while (count--) {
