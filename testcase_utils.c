@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "testcase_utils.h"
 #include "testcase_runner.h"
