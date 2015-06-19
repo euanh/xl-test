@@ -11,17 +11,6 @@ struct pollfd pollfds[NUM_POLL_FDS];
 
 int eventloop_run;
 
-void init_pollfds(struct pollfd *pollfds, int numfds)
-{
-    int i;
-
-    for (i = 0; i < numfds; i++) {
-        pollfds[i].fd = -1;
-        pollfds[i].events = 0;
-        pollfds[i].revents = 0;
-    }
-}
-
 void log_poll_events(struct pollfd pfd)
 {
     if (pfd.revents & POLLIN) {
@@ -61,7 +50,6 @@ void eventloop_start(struct test *tc)
         int timeout;
         struct timeval now;
 
-        init_pollfds(pollfds, NUM_POLL_FDS);
         gettimeofday(&now, NULL);
         libxl_osevent_beforepoll(tc->ctx, &nfds, pollfds, &timeout, now);
         rc = poll(pollfds, NUM_POLL_FDS, 2000);
