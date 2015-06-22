@@ -11,6 +11,7 @@ void print_domain_config(libxl_ctx * ctx, char *msg, libxl_domain_config * dc)
     free(json);
 }
 
+
 void
 init_domain_config(libxl_domain_config * dc,
                    char *name, char *kernel, char *ramdisk,
@@ -75,4 +76,15 @@ int do_domain_suspend(struct test *t, uint32_t domid, int fd)
     t->ao_how.u.for_callback = t;
 
     return libxl_domain_suspend(t->ctx, domid, fd, LIBXL_SUSPEND_LIVE, &t->ao_how);
+}
+
+int
+do_domain_create_restore(struct test *t, libxl_domain_config * dc,
+                         uint32_t * domid_out, int restore_fd,
+                         libxl_domain_restore_params *params)
+{
+    t->ao_how.callback = generic_callback;
+    t->ao_how.u.for_callback = t;
+
+    return libxl_domain_create_restore(t->ctx, dc, domid_out, restore_fd, params, &t->ao_how, 0);
 }
