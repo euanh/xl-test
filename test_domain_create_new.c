@@ -47,7 +47,7 @@ void *testcase(struct test *tc)
         do_domain_create(tc, &dc, &domid);
         libxl_domain_config_dispose(&dc);
 
-        if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev)) {
+        if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev, 0)) {
             /* The API call returned before we could cancel it.
                It should have returned successfully.
              */

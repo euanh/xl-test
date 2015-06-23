@@ -63,7 +63,7 @@ void *testcase(struct test *tc)
         suspend_fd = fileno(suspend_file);
         do_domain_suspend(tc, domid, suspend_fd);
 
-        if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev)) {
+        if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev, 100)) {
             /* The API call returned before we could cancel it.
                It should have returned successfully.
              */
