@@ -8,7 +8,7 @@ ALL_SRCS = $(SRCS) $(TESTS)
 all: $(TESTS:.c=)
 
 test_%: $(SRCS:.c=.o) test_%.o
-	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 %.d: %.c
 	$(CC) -M $< > $@
