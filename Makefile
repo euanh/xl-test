@@ -1,6 +1,6 @@
 SRCS = testcase_runner.c eventloop_runner.c testcase_utils.c async_test.c
 CFLAGS = -Wall -Wextra -Werror -g
-LDLIBS = -pthread -lxenctrl -lxlutil -lxenlight -ldl
+LDLIBS = -pthread -lxenctrl -lxlutil -lxenlight
 TESTS = $(wildcard test_*.c)
 ALL_SRCS = $(SRCS) $(TESTS)
 
