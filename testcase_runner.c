@@ -83,17 +83,33 @@ wait_for_n(struct test *tc, enum event_type mask, int count, struct event *ev)
 }
 
 /* Wait until an event matching the mask is posted, or count other events
-   are posted.  Returns 1 if the matching event is posted, 0 otherwise.
+   are posted.  Contiguous runs of up to batch_size of the same event are
+   squashed to a single event.
+   Returns 1 if the matching event is posted, 0 otherwise.
  */
 bool wait_until_n(struct test *tc, enum event_type mask, int count,
-                 struct event *ev)
+                 struct event *ev, int batch_size)
 {
+    enum event_type prev_event = EV_NONE;
+
     while (count--) {
-        wait_for(tc, ~EV_EVENTLOOP, ev);
+        /* Consume up to batch_size identical events */
+        int i = batch_size;
+        do {
+            wait_for(tc, ~EV_EVENTLOOP, ev);
+            if (ev->type != prev_event) {
+                prev_event = ev->type;
+                break;
+            }
+        } while (--i > 0);
+
+        /* Return if an event we are looking for has arrived */
         if (ev->type & mask) {
             return 1;
         }
     }
+
+    /* We did not find the event we were looking for */
     return 0;
 }
 

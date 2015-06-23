@@ -63,7 +63,7 @@ void wait_for(struct test *tc, enum event_type mask, struct event *ev);
 void wait_for_n(struct test *tc, enum event_type mask, int count,
                 struct event *ev);
 bool wait_until_n(struct test *tc, enum event_type mask, int count,
-                  struct event *ev);
+                  struct event *ev, int batch_size);
 int send_fd_event(struct test *tc, int fd);
 int send_libxl_callback_event(struct test *tc, int rc);
 int send_libxl_event(struct test *tc, libxl_event_type type);
