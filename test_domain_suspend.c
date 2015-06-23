@@ -26,7 +26,7 @@ void *testcase(struct test *tc)
     int count;
 
     libxl_domain_config dc;
-    uint32_t domid;
+    uint32_t domid = -2;
     struct event ev;
 
     init_domain_config(&dc, "test_domain_suspend",
@@ -37,6 +37,8 @@ void *testcase(struct test *tc)
 
     do_domain_create(tc, &dc, &domid);
     wait_for(tc, EV_LIBXL_CALLBACK, &ev);
+    assert(ev.u.callback_event.rc == 0);
+    assert(domid != (uint32_t) -2);
     printf("domid: %d\n", domid);
 
     libxl_domain_unpause(tc->ctx, domid);
@@ -45,9 +47,11 @@ void *testcase(struct test *tc)
     printf("waiting for domain to boot\n");
     wait_for_n(tc, EV_EVENTLOOP, 10, &ev);	
 
-    /* test should wait for some number of fd_events, cancel, then
-       skip all fd_events and cancel on the next non-fd event, or at
-       least the next fd event on a different fd */
+    /* Most of the work of suspending a domain is done by helper
+       processes.   The helper processes generate hundreds of FD events,
+       so the test tries to cancel after batches of 100 FD events, as well
+       as after every non-FD event. */
+
     for (count = 1; count < 100; count++) {
         int rc;
         FILE *suspend_file;
@@ -80,6 +84,10 @@ void *testcase(struct test *tc)
             break;
         }
 
+        /* The wait_until_n() call did not receive a calback event,
+           so we will try to cancel the asynchronous operation */
+
+        printf("Cancelling asynchronous operation\n");
         rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
 
         /* Calling cancel on a cancellable operation should not return an
