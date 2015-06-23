@@ -88,3 +88,12 @@ do_domain_create_restore(struct test *t, libxl_domain_config * dc,
 
     return libxl_domain_create_restore(t->ctx, dc, domid_out, restore_fd, params, &t->ao_how, 0);
 }
+
+int do_domain_destroy(struct test *t, uint32_t domid)
+{
+    t->ao_how.callback = generic_callback;
+    t->ao_how.u.for_callback = t;
+
+    return libxl_domain_destroy(t->ctx, domid, &t->ao_how);
+}
+
