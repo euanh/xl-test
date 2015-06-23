@@ -14,7 +14,7 @@ int main(int argc __attribute__((unused)),
     xentoollog_logger *logger;
 
     logger = (xentoollog_logger *)
-        xtl_createlogger_stdiostream(stderr, XTL_PROGRESS, 0);
+        xtl_createlogger_stdiostream(stderr, XTL_DEBUG, 0);
 
     if (! !test_spawn(&t, logger, testcase)) {
         perror("Failed to spawn test thread");
