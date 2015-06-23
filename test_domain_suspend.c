@@ -19,6 +19,12 @@
  *
  *   After cancellation, the domain can be suspended (and cancelled)
  *   again.
+ * 
+ * Problems:
+ *   If we cancel after a certain point, the domain will have been
+ *   suspended and won't respond to another request to suspend it.
+ *   The test logic should check whether the domain is running before
+ *   trying to suspend.
  */
 
 void *testcase(struct test *tc)
@@ -63,7 +69,7 @@ void *testcase(struct test *tc)
         suspend_fd = fileno(suspend_file);
         do_domain_suspend(tc, domid, suspend_fd);
 
-        if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev)) {
+        if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev, 50)) {
             /* The API call returned before we could cancel it.
                It should have returned successfully.
              */
