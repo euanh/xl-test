@@ -1,4 +1,7 @@
+*~
 *.o
 *.so
 *.d
-async_test
+test_domain_create_new
+test_domain_create_restore
+test_domain_suspend
