@@ -43,6 +43,7 @@ void *testcase(struct test *tc)
 
         printf("\n****** Will cancel after %d events ******\n", count);
 
+        domid = -2;
         do_domain_create(tc, &dc, &domid);
 
         if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev)) {
@@ -58,6 +59,7 @@ void *testcase(struct test *tc)
             printf("libxl_ao_cancel returned %d\n", rc);
             assert(rc == ERROR_NOTFOUND);
 
+            assert(domid);
             libxl_domain_destroy(tc->ctx, domid, 0);
             break;
         }
