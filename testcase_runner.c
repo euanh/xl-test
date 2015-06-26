@@ -94,14 +94,14 @@ bool wait_until_n(struct test *tc, enum event_type mask, int count,
 
     while (count--) {
         /* Consume up to batch_size identical events */
-        int i;
-        for (i = 0; i < batch_size; i++) {
+        int i = batch_size;
+        do {
             wait_for(tc, ~EV_EVENTLOOP, ev);
             if (ev->type != prev_event) {
                 prev_event = ev->type;
                 break;
             }
-        }
+        } while (--i > 0);
 
         /* Return if an event we are looking for has arrived */
         if (ev->type & mask) {
