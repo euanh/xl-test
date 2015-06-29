@@ -68,7 +68,9 @@ void *testcase(struct test *tc)
              */
             printf("libxl_domain_destroy returned %d\n",
                    ev.u.callback_event.rc);
-            assert(ev.u.callback_event.rc == 0);
+            assert(ev.u.callback_event.rc == 0 ||
+                   ev.u.callback_event.rc == ERROR_INVAL ||
+                   ev.u.callback_event.rc == ERROR_LOCK_FAIL);
 
             /* No operation in progress - cancelling should return an error */
             rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
@@ -96,7 +98,10 @@ void *testcase(struct test *tc)
         assert(ev.u.callback_event.rc == ERROR_CANCELLED
                || ev.u.callback_event.rc == 0);
 
-        /* Destroy was cancelled - the domain should still be running */
+        /* Destroy was cancelled - the domain may still be running, or may
+           have been destroyed, depending on exactly when the cancellation
+           occurred.
+         */
         assert(!libxl_domain_info(tc->ctx, NULL, domid));
     }
 
