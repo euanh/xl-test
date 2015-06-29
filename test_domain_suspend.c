@@ -84,7 +84,7 @@ void *testcase(struct test *tc)
 
             /* No operation in progress - cancelling should return an error */
             rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
-            printf("libxl_ao_cancel returned %d\n", rc);
+            printf("libxl_ao_cancel (after AO completion) returned %d\n", rc);
             assert(rc == ERROR_NOTFOUND);
 
             break;
