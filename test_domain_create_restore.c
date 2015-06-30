@@ -94,6 +94,9 @@ void *testcase(struct test *tc)
             printf("libxl_ao_cancel (after AO completion) returned %d\n", rc);
             assert(rc == ERROR_NOTFOUND);
 
+            assert(domid);
+            libxl_domain_destroy(tc->ctx, domid, 0);
+            libxl_domain_config_dispose(&dc);
             break;
         }
 
@@ -119,9 +122,6 @@ void *testcase(struct test *tc)
         libxl_domain_config_dispose(&dc);
     }
 
-    fclose(suspend_file);
-    libxl_domain_destroy(tc->ctx, domid, 0);
-    libxl_domain_config_dispose(&dc);
     test_exit();
     return NULL;
 }
