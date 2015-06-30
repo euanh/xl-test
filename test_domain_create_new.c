@@ -61,6 +61,7 @@ void *testcase(struct test *tc)
 
             assert(domid);
             libxl_domain_destroy(tc->ctx, domid, 0);
+            libxl_domain_config_dispose(&dc);
             break;
         }
 
@@ -85,9 +86,9 @@ void *testcase(struct test *tc)
         assert(!libxl_domain_info(tc->ctx, NULL, domid));
 
         libxl_domain_destroy(tc->ctx, domid, 0);
+        libxl_domain_config_dispose(&dc);
     }
 
-    libxl_domain_config_dispose(&dc);
     test_exit();
     return NULL;
 }
