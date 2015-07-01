@@ -19,19 +19,14 @@
  *   After cancellation, the domain may or may not exist, and may be running.
  */
 
-void *testcase(struct test *tc)
+void setup(struct test *tc, FILE **suspend_file)
 {
-    int count;
-
+    struct event ev;
     libxl_domain_config dc;
     uint32_t domid = -2;
-    struct event ev;
-
-    int rc;
-    FILE *suspend_file;
     int suspend_fd;
 
-    init_domain_config(&dc, "test_domain_suspend",
+    init_domain_config(&dc, "test_domain_create_restore",
                        "resources/vmlinuz-4.0.4-301.fc22.x86_64",
                        "resources/initrd.xen-4.0.4-301.fc22.x86_64",
                        "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
@@ -48,35 +43,50 @@ void *testcase(struct test *tc)
     printf("waiting for domain to boot\n");
     wait_for_n(tc, EV_EVENTLOOP, 10, &ev);	
 
-    suspend_file = tmpfile();
-    if (!suspend_file) {
+    *suspend_file = tmpfile();
+    if (!(*suspend_file)) {
         perror("tmpfile");
         exit(EXIT_FAILURE);
     }
-    suspend_fd = fileno(suspend_file);
+    suspend_fd = fileno(*suspend_file);
+
     do_domain_suspend(tc, domid, suspend_fd);
     wait_for(tc, EV_LIBXL_CALLBACK, &ev);
 
     libxl_domain_destroy(tc->ctx, domid, 0);
     libxl_domain_config_dispose(&dc);
+}
+
+void *testcase(struct test *tc)
+{
+    int count;
+
+    FILE *suspend_file;
+    int suspend_fd;
+
+    setup(tc, &suspend_file);
+    suspend_fd = fileno(suspend_file);
 
     /* test should wait for some number of fd_events, cancel, then
        skip all fd_events and cancel on the next non-fd event, or at
        least the next fd event on a different fd */
     for (count = 1; count < 100; count++) {
+        libxl_domain_config dc;
         libxl_domain_restore_params params;
+        uint32_t domid = -2;
+        struct event ev;
+        int rc;
 
         printf("\n****** Will cancel after %d events ******\n", count);
+	lseek(suspend_fd, 0, SEEK_SET);
+
         init_domain_config(&dc, "test_domain_suspend",
                            "resources/vmlinuz-4.0.4-301.fc22.x86_64",
                            "resources/initrd.xen-4.0.4-301.fc22.x86_64",
                            "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
                            "resources/cloudinit.iso");
-
         libxl_domain_restore_params_init(&params);
-	lseek(suspend_fd, 0, SEEK_SET);
 
-	domid = -2;
 	do_domain_create_restore(tc, &dc, &domid, suspend_fd, &params);
 
         if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev, 50)) {
