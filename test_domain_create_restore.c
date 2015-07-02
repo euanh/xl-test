@@ -19,12 +19,20 @@
  *   After cancellation, the domain may or may not exist, and may be running.
  */
 
-void setup_suite(struct test *tc, FILE **suspend_file)
+struct test_state {
+    FILE *suspend_file;
+};
+
+void setup_suite(struct test *tc, FILE **suspend_file, 
+                 void **_state)
 {
     struct event ev;
     libxl_domain_config dc;
     uint32_t domid = -2;
     int suspend_fd;
+
+    struct test_state *st = malloc(sizeof *st);
+    *_state = st;
 
     init_domain_config(&dc, "test_domain_create_restore",
                        "resources/vmlinuz-4.0.4-301.fc22.x86_64",
@@ -112,9 +120,10 @@ teardown(struct test *tc, uint32_t domid, libxl_domain_config *dc)
 
 
 void
-teardown_suite(FILE *suspend_file)
+teardown_suite(FILE *suspend_file, struct test_state *st)
 {
     fclose(suspend_file);
+    free(st);
 }
 
 
@@ -151,8 +160,9 @@ execute(struct test *tc, uint32_t *domid, libxl_domain_config *dc, libxl_domain_
 void *testcase(struct test *tc)
 {
     int count;
+    void *state;
     FILE *suspend_file;
-    setup_suite(tc, &suspend_file);
+    setup_suite(tc, &suspend_file, &state);
 
     for (count = 1; count < 100; count++) {
         libxl_domain_config dc;
@@ -169,7 +179,7 @@ void *testcase(struct test *tc)
         }
     }
 
-    teardown_suite(suspend_file);
+    teardown_suite(suspend_file, state);
     test_exit();
     return NULL;
 }
