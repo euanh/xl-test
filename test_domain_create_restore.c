@@ -21,6 +21,7 @@
 
 struct test_state {
     FILE *suspend_file;
+    libxl_domain_config dc;
 };
 
 void setup_suite(struct test *tc, void **_state)
@@ -64,10 +65,10 @@ void setup_suite(struct test *tc, void **_state)
 
 
 void 
-setup(struct test *tc __attribute__((__unused__)), libxl_domain_config *dc, libxl_domain_restore_params *params, struct test_state *st)
+setup(struct test *tc __attribute__((__unused__)), libxl_domain_restore_params *params, struct test_state *st)
 {
     lseek(fileno(st->suspend_file), 0, SEEK_SET);
-    init_domain_config(dc, "test_domain_suspend",
+    init_domain_config(&st->dc, "test_domain_suspend",
                        "resources/vmlinuz-4.0.4-301.fc22.x86_64",
                        "resources/initrd.xen-4.0.4-301.fc22.x86_64",
                        "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
@@ -108,11 +109,11 @@ verify_completed(struct test *tc, uint32_t domid, struct event ev)
 
 
 void
-teardown(struct test *tc, uint32_t domid, libxl_domain_config *dc)
+teardown(struct test *tc, uint32_t domid, struct test_state *st)
 {
     assert(domid);
     libxl_domain_destroy(tc->ctx, domid, 0);
-    libxl_domain_config_dispose(dc);
+    libxl_domain_config_dispose(&st->dc);
 }
 
 
@@ -125,13 +126,13 @@ teardown_suite(struct test_state *st)
 
 
 bool
-execute(struct test *tc, uint32_t *domid, libxl_domain_config *dc, libxl_domain_restore_params *params, int count, struct test_state *st)
+execute(struct test *tc, uint32_t *domid, libxl_domain_restore_params *params, int count, struct test_state *st)
 {
     struct event ev;
     int rc;
 
     printf("\n****** Will cancel after %d events ******\n", count);
-    do_domain_create_restore(tc, dc, domid, fileno(st->suspend_file), params);
+    do_domain_create_restore(tc, &st->dc, domid, fileno(st->suspend_file), params);
 
     if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev, 50)) {
         /* The API call returned before we could cancel it.
@@ -161,14 +162,13 @@ void *testcase(struct test *tc)
     setup_suite(tc, &state);
 
     for (count = 1; count < 100; count++) {
-        libxl_domain_config dc;
         libxl_domain_restore_params params;
         uint32_t domid = -2;
         bool cont;
 
-        setup(tc, &dc, &params, state);
-        cont = execute(tc, &domid, &dc, &params, count, state);
-        teardown(tc, domid, &dc);
+        setup(tc, &params, state);
+        cont = execute(tc, &domid, &params, count, state);
+        teardown(tc, domid, state);
 
         if (!cont) {
             break;
