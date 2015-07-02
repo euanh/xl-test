@@ -23,6 +23,7 @@ struct test_state {
     FILE *suspend_file;
     libxl_domain_config dc;
     libxl_domain_restore_params drp;
+    uint32_t domid;
 };
 
 void setup_suite(struct test *tc, void **_state)
@@ -110,10 +111,10 @@ verify_completed(struct test *tc, uint32_t domid, struct event ev)
 
 
 void
-teardown(struct test *tc, uint32_t domid, struct test_state *st)
+teardown(struct test *tc, struct test_state *st)
 {
-    assert(domid);
-    libxl_domain_destroy(tc->ctx, domid, 0);
+    assert(st->domid);
+    libxl_domain_destroy(tc->ctx, st->domid, 0);
     libxl_domain_config_dispose(&st->dc);
 }
 
@@ -127,19 +128,19 @@ teardown_suite(struct test_state *st)
 
 
 bool
-execute(struct test *tc, uint32_t *domid, libxl_domain_restore_params *params, int count, struct test_state *st)
+execute(struct test *tc, struct test_state *st, int count)
 {
     struct event ev;
     int rc;
 
     printf("\n****** Will cancel after %d events ******\n", count);
-    do_domain_create_restore(tc, &st->dc, domid, fileno(st->suspend_file), params);
+    do_domain_create_restore(tc, &st->dc, &st->domid, fileno(st->suspend_file), &st->drp);
 
     if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev, 50)) {
         /* The API call returned before we could cancel it.
            It should have returned successfully.
          */
-        verify_completed(tc, *domid, ev);
+        verify_completed(tc, st->domid, ev);
         return false;
     }
 
@@ -152,7 +153,7 @@ execute(struct test *tc, uint32_t *domid, libxl_domain_restore_params *params, i
     assert(rc == ERROR_NOTFOUND || rc == 0);
     wait_for(tc, EV_LIBXL_CALLBACK, &ev);
 
-    verify_cancelled(tc, *domid, ev);
+    verify_cancelled(tc, st->domid, ev);
     return true;
 }
 
@@ -163,12 +164,11 @@ void *testcase(struct test *tc)
     setup_suite(tc, &state);
 
     for (count = 1; count < 100; count++) {
-        uint32_t domid = -2;
         bool cont;
 
         setup(tc, state);
-        cont = execute(tc, &domid, state, count);
-        teardown(tc, domid, state);
+        cont = execute(tc, state, count);
+        teardown(tc, state);
 
         if (!cont) {
             break;
