@@ -72,6 +72,27 @@ verify_cancelled(struct test *tc, uint32_t domid, struct event ev, libxl_domain_
     libxl_domain_config_dispose(dc);
 }
 
+
+void
+verify_completed(struct test *tc, uint32_t domid, struct event ev, libxl_domain_config *dc)
+{
+    int rc;
+
+    printf("libxl_domain_restore returned %d\n",
+           ev.u.callback_event.rc);
+    assert(ev.u.callback_event.rc == 0);
+    libxl_domain_unpause(tc->ctx, domid);
+
+    /* No operation in progress - cancelling should return an error */
+    rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
+    printf("libxl_ao_cancel (after AO completion) returned %d\n", rc);
+    assert(rc == ERROR_NOTFOUND);
+
+    assert(domid);
+    libxl_domain_destroy(tc->ctx, domid, 0);
+    libxl_domain_config_dispose(dc);
+}
+
 void *testcase(struct test *tc)
 {
     int count;
@@ -109,19 +130,7 @@ void *testcase(struct test *tc)
                It should have returned successfully.
              */
             fclose(suspend_file);
-            printf("libxl_domain_restore returned %d\n",
-                   ev.u.callback_event.rc);
-            assert(ev.u.callback_event.rc == 0);
-            libxl_domain_unpause(tc->ctx, domid);
-
-            /* No operation in progress - cancelling should return an error */
-            rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
-            printf("libxl_ao_cancel (after AO completion) returned %d\n", rc);
-            assert(rc == ERROR_NOTFOUND);
-
-            assert(domid);
-            libxl_domain_destroy(tc->ctx, domid, 0);
-            libxl_domain_config_dispose(&dc);
+            verify_completed(tc, domid, ev, &dc);
             break;
         }
 
