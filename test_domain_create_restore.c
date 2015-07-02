@@ -120,7 +120,8 @@ teardown(struct test *tc, struct test_state *st)
 
 
 void
-teardown_suite(struct test_state *st)
+teardown_suite(struct test *tc __attribute__((__unused__)),
+               struct test_state *st)
 {
     fclose(st->suspend_file);
     free(st);
@@ -175,7 +176,7 @@ void *testcase(struct test *tc)
         }
     }
 
-    teardown_suite(state);
+    teardown_suite(tc, state);
     test_exit();
     return NULL;
 }
