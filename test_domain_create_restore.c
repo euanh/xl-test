@@ -70,7 +70,7 @@ void
 setup(struct test *tc __attribute__((__unused__)), struct test_state *st)
 {
     lseek(fileno(st->suspend_file), 0, SEEK_SET);
-    init_domain_config(&st->dc, "test_domain_suspend",
+    init_domain_config(&st->dc, "test_domain_create_restore",
                        "resources/vmlinuz-4.0.4-301.fc22.x86_64",
                        "resources/initrd.xen-4.0.4-301.fc22.x86_64",
                        "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
