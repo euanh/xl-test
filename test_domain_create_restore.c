@@ -57,6 +57,21 @@ void setup(struct test *tc, FILE **suspend_file)
     libxl_domain_config_dispose(&dc);
 }
 
+void
+verify_cancelled(struct test *tc, uint32_t domid, struct event ev, libxl_domain_config *dc)
+{
+    printf("libxl_domain_restore returned %d\n",
+           ev.u.callback_event.rc);
+    assert(ev.u.callback_event.rc == ERROR_FAIL  /* XXX should be ERROR_CANCELLED */
+           || ev.u.callback_event.rc == 0);
+    assert(domid != (uint32_t) -2);
+
+    /* Restore was cancelled - the domain should not be running */
+    /* assert(!libxl_domain_info(tc->ctx, NULL, domid)); */
+    libxl_domain_destroy(tc->ctx, domid, 0);
+    libxl_domain_config_dispose(dc);
+}
+
 void *testcase(struct test *tc)
 {
     int count;
@@ -117,19 +132,9 @@ void *testcase(struct test *tc)
          */
         printf("libxl_ao_cancel returned %d\n", rc);
         assert(rc == ERROR_NOTFOUND || rc == 0);
-
-        /* The API call's return code should indicate that it was cancelled */
         wait_for(tc, EV_LIBXL_CALLBACK, &ev);
-        printf("libxl_domain_restore returned %d\n",
-               ev.u.callback_event.rc);
-        assert(ev.u.callback_event.rc == ERROR_FAIL  /* XXX should be ERROR_CANCELLED */
-               || ev.u.callback_event.rc == 0);
-        assert(domid != (uint32_t) -2);
 
-        /* Restore was cancelled - the domain should not be running */
-        /* assert(!libxl_domain_info(tc->ctx, NULL, domid)); */
-        libxl_domain_destroy(tc->ctx, domid, 0);
-        libxl_domain_config_dispose(&dc);
+        verify_cancelled(tc, domid, ev, &dc);
     }
 
     test_exit();
