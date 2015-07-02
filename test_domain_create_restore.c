@@ -23,13 +23,11 @@ struct test_state {
     FILE *suspend_file;
 };
 
-void setup_suite(struct test *tc, FILE **suspend_file, 
-                 void **_state)
+void setup_suite(struct test *tc, void **_state)
 {
     struct event ev;
     libxl_domain_config dc;
     uint32_t domid = -2;
-    int suspend_fd;
 
     struct test_state *st = malloc(sizeof *st);
     *_state = st;
@@ -51,14 +49,13 @@ void setup_suite(struct test *tc, FILE **suspend_file,
     printf("waiting for domain to boot\n");
     wait_for_n(tc, EV_EVENTLOOP, 10, &ev);	
 
-    *suspend_file = tmpfile();
-    if (!(*suspend_file)) {
+    st->suspend_file = tmpfile();
+    if (!(st->suspend_file)) {
         perror("tmpfile");
         exit(EXIT_FAILURE);
     }
-    suspend_fd = fileno(*suspend_file);
 
-    do_domain_suspend(tc, domid, suspend_fd);
+    do_domain_suspend(tc, domid, fileno(st->suspend_file));
     wait_for(tc, EV_LIBXL_CALLBACK, &ev);
 
     libxl_domain_destroy(tc->ctx, domid, 0);
@@ -67,9 +64,9 @@ void setup_suite(struct test *tc, FILE **suspend_file,
 
 
 void 
-setup(struct test *tc __attribute__((__unused__)), libxl_domain_config *dc, FILE *suspend_file, libxl_domain_restore_params *params)
+setup(struct test *tc __attribute__((__unused__)), libxl_domain_config *dc, libxl_domain_restore_params *params, struct test_state *st)
 {
-    lseek(fileno(suspend_file), 0, SEEK_SET);
+    lseek(fileno(st->suspend_file), 0, SEEK_SET);
     init_domain_config(dc, "test_domain_suspend",
                        "resources/vmlinuz-4.0.4-301.fc22.x86_64",
                        "resources/initrd.xen-4.0.4-301.fc22.x86_64",
@@ -120,21 +117,21 @@ teardown(struct test *tc, uint32_t domid, libxl_domain_config *dc)
 
 
 void
-teardown_suite(FILE *suspend_file, struct test_state *st)
+teardown_suite(struct test_state *st)
 {
-    fclose(suspend_file);
+    fclose(st->suspend_file);
     free(st);
 }
 
 
 bool
-execute(struct test *tc, uint32_t *domid, libxl_domain_config *dc, libxl_domain_restore_params *params, int count, FILE* suspend_file)
+execute(struct test *tc, uint32_t *domid, libxl_domain_config *dc, libxl_domain_restore_params *params, int count, struct test_state *st)
 {
     struct event ev;
     int rc;
 
     printf("\n****** Will cancel after %d events ******\n", count);
-    do_domain_create_restore(tc, dc, domid, fileno(suspend_file), params);
+    do_domain_create_restore(tc, dc, domid, fileno(st->suspend_file), params);
 
     if (wait_until_n(tc, EV_LIBXL_CALLBACK, count, &ev, 50)) {
         /* The API call returned before we could cancel it.
@@ -161,8 +158,7 @@ void *testcase(struct test *tc)
 {
     int count;
     void *state;
-    FILE *suspend_file;
-    setup_suite(tc, &suspend_file, &state);
+    setup_suite(tc, &state);
 
     for (count = 1; count < 100; count++) {
         libxl_domain_config dc;
@@ -170,8 +166,8 @@ void *testcase(struct test *tc)
         uint32_t domid = -2;
         bool cont;
 
-        setup(tc, &dc, suspend_file, &params);
-        cont = execute(tc, &domid, &dc, &params, count, suspend_file);
+        setup(tc, &dc, &params, state);
+        cont = execute(tc, &domid, &dc, &params, count, state);
         teardown(tc, domid, &dc);
 
         if (!cont) {
@@ -179,7 +175,7 @@ void *testcase(struct test *tc)
         }
     }
 
-    teardown_suite(suspend_file, state);
+    teardown_suite(state);
     test_exit();
     return NULL;
 }
