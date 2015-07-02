@@ -22,6 +22,7 @@
 struct test_state {
     FILE *suspend_file;
     libxl_domain_config dc;
+    libxl_domain_restore_params drp;
 };
 
 void setup_suite(struct test *tc, void **_state)
@@ -65,7 +66,7 @@ void setup_suite(struct test *tc, void **_state)
 
 
 void 
-setup(struct test *tc __attribute__((__unused__)), libxl_domain_restore_params *params, struct test_state *st)
+setup(struct test *tc __attribute__((__unused__)), struct test_state *st)
 {
     lseek(fileno(st->suspend_file), 0, SEEK_SET);
     init_domain_config(&st->dc, "test_domain_suspend",
@@ -73,7 +74,7 @@ setup(struct test *tc __attribute__((__unused__)), libxl_domain_restore_params *
                        "resources/initrd.xen-4.0.4-301.fc22.x86_64",
                        "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
                        "resources/cloudinit.iso");
-    libxl_domain_restore_params_init(params);
+    libxl_domain_restore_params_init(&st->drp);
 }
 
 
@@ -162,12 +163,11 @@ void *testcase(struct test *tc)
     setup_suite(tc, &state);
 
     for (count = 1; count < 100; count++) {
-        libxl_domain_restore_params params;
         uint32_t domid = -2;
         bool cont;
 
-        setup(tc, &params, state);
-        cont = execute(tc, &domid, &params, count, state);
+        setup(tc, state);
+        cont = execute(tc, &domid, state, count);
         teardown(tc, domid, state);
 
         if (!cont) {
