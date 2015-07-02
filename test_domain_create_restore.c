@@ -84,6 +84,7 @@ verify_cancelled(struct test *tc __attribute__((__unused__)), uint32_t domid, st
     /* assert(!libxl_domain_info(tc->ctx, NULL, domid)); */
 }
 
+
 void
 verify_completed(struct test *tc, uint32_t domid, struct event ev)
 {
@@ -100,12 +101,20 @@ verify_completed(struct test *tc, uint32_t domid, struct event ev)
     assert(rc == ERROR_NOTFOUND);
 }
 
+
 void
 teardown(struct test *tc, uint32_t domid, libxl_domain_config *dc)
 {
     assert(domid);
     libxl_domain_destroy(tc->ctx, domid, 0);
     libxl_domain_config_dispose(dc);
+}
+
+
+void
+teardown_suite(FILE *suspend_file)
+{
+    fclose(suspend_file);
 }
 
 void *testcase(struct test *tc)
@@ -137,7 +146,6 @@ void *testcase(struct test *tc)
             /* The API call returned before we could cancel it.
                It should have returned successfully.
              */
-            fclose(suspend_file);
             verify_completed(tc, domid, ev);
             teardown(tc, domid, &dc);
             break;
@@ -156,6 +164,7 @@ void *testcase(struct test *tc)
         teardown(tc, domid, &dc);
     }
 
+    teardown_suite(suspend_file);
     test_exit();
     return NULL;
 }
