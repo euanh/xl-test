@@ -134,11 +134,11 @@ void *testcase(struct test *tc)
             break;
         }
 
-        rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
-
-        /* Calling cancel on a cancellable operation should not return an
-           error, unless the operation happened to complete in the meantime.
+        /*
+         * Calling cancel on a cancellable operation should not return an
+         * error, unless the operation happened to complete in the meantime.
          */
+        rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
         printf("libxl_ao_cancel returned %d\n", rc);
         assert(rc == ERROR_NOTFOUND || rc == 0);
         wait_for(tc, EV_LIBXL_CALLBACK, &ev);
