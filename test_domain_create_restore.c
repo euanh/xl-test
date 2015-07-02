@@ -72,7 +72,7 @@ setup(struct test *tc __attribute__((__unused__)), libxl_domain_config *dc, FILE
 
 
 void
-verify_cancelled(struct test *tc, uint32_t domid, struct event ev, libxl_domain_config *dc)
+verify_cancelled(struct test *tc __attribute__((__unused__)), uint32_t domid, struct event ev)
 {
     printf("libxl_domain_restore returned %d\n",
            ev.u.callback_event.rc);
@@ -82,12 +82,10 @@ verify_cancelled(struct test *tc, uint32_t domid, struct event ev, libxl_domain_
 
     /* Restore was cancelled - the domain should not be running */
     /* assert(!libxl_domain_info(tc->ctx, NULL, domid)); */
-    libxl_domain_destroy(tc->ctx, domid, 0);
-    libxl_domain_config_dispose(dc);
 }
 
 void
-verify_completed(struct test *tc, uint32_t domid, struct event ev, libxl_domain_config *dc)
+verify_completed(struct test *tc, uint32_t domid, struct event ev)
 {
     int rc;
 
@@ -100,7 +98,11 @@ verify_completed(struct test *tc, uint32_t domid, struct event ev, libxl_domain_
     rc = libxl_ao_cancel(tc->ctx, &tc->ao_how);
     printf("libxl_ao_cancel (after AO completion) returned %d\n", rc);
     assert(rc == ERROR_NOTFOUND);
+}
 
+void
+teardown(struct test *tc, uint32_t domid, libxl_domain_config *dc)
+{
     assert(domid);
     libxl_domain_destroy(tc->ctx, domid, 0);
     libxl_domain_config_dispose(dc);
@@ -136,7 +138,8 @@ void *testcase(struct test *tc)
                It should have returned successfully.
              */
             fclose(suspend_file);
-            verify_completed(tc, domid, ev, &dc);
+            verify_completed(tc, domid, ev);
+            teardown(tc, domid, &dc);
             break;
         }
 
@@ -149,7 +152,8 @@ void *testcase(struct test *tc)
         assert(rc == ERROR_NOTFOUND || rc == 0);
         wait_for(tc, EV_LIBXL_CALLBACK, &ev);
 
-        verify_cancelled(tc, domid, ev, &dc);
+        verify_cancelled(tc, domid, ev);
+        teardown(tc, domid, &dc);
     }
 
     test_exit();
