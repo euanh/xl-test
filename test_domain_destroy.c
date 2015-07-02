@@ -37,11 +37,7 @@ void *testcase(struct test *tc)
     uint32_t domid = -2;
     struct event ev;
 
-    init_domain_config(&dc, "test_domain_destroy",
-                       "resources/vmlinuz-4.0.4-301.fc22.x86_64",
-                       "resources/initrd.xen-4.0.4-301.fc22.x86_64",
-                       "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
-                       "resources/cloudinit.iso");
+    init_domain_config(&dc, "test_domain_destroy");
 
     do_domain_create(tc, &dc, &domid);
     wait_for(tc, EV_LIBXL_CALLBACK, &ev);

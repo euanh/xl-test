@@ -35,11 +35,7 @@ void *testcase(struct test *tc)
         struct event ev;
         int rc;
 
-        init_domain_config(&dc, "test_domain_create_new",
-                           "resources/vmlinuz-4.0.4-301.fc22.x86_64",
-                           "resources/initrd.xen-4.0.4-301.fc22.x86_64",
-                    "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
-                           "resources/cloudinit.iso");
+        init_domain_config(&dc, "test_domain_create_new");
 
         printf("\n****** Will cancel after %d events ******\n", count);
 

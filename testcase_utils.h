@@ -5,9 +5,7 @@
 
 struct test;
 
-void init_domain_config(libxl_domain_config * dc,
-                        char *name, char *kernel, char *ramdisk,
-                        char *hdd, char *cdrom);
+void init_domain_config(libxl_domain_config * dc, char *name);
 
 int do_domain_create(struct test *t, libxl_domain_config * dc,
                      uint32_t * domid_out);

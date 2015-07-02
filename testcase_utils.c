@@ -11,9 +11,8 @@ void print_domain_config(libxl_ctx * ctx, char *msg, libxl_domain_config * dc)
     free(json);
 }
 
-
 void
-init_domain_config(libxl_domain_config * dc,
+_init_domain_config(libxl_domain_config * dc,
                    char *name, char *kernel, char *ramdisk,
                    char *hdd, char *cdrom)
 {
@@ -51,6 +50,16 @@ init_domain_config(libxl_domain_config * dc,
     disk->format = LIBXL_DISK_FORMAT_RAW;
     disk->removable = 1;
     disk->is_cdrom = 1;
+}
+
+void
+init_domain_config(libxl_domain_config *dc, char *name)
+{
+    _init_domain_config(dc, name,
+                        "resources/vmlinuz-4.0.4-301.fc22.x86_64",
+                        "resources/initrd.xen-4.0.4-301.fc22.x86_64",
+                        "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
+                        "resources/cloudinit.iso");
 }
 
 void generic_callback(libxl_ctx * ctx

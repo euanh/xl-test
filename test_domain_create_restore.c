@@ -35,11 +35,7 @@ void setup_suite(struct test *tc, void **_state)
     struct test_state *st = malloc(sizeof *st);
     *_state = st;
 
-    init_domain_config(&dc, "test_domain_create_restore",
-                       "resources/vmlinuz-4.0.4-301.fc22.x86_64",
-                       "resources/initrd.xen-4.0.4-301.fc22.x86_64",
-                       "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
-                       "resources/cloudinit.iso");
+    init_domain_config(&dc, "test_domain_create_restore");
 
     do_domain_create(tc, &dc, &domid);
     wait_for(tc, EV_LIBXL_CALLBACK, &ev);
@@ -70,11 +66,7 @@ void
 setup(struct test *tc __attribute__((__unused__)), struct test_state *st)
 {
     lseek(fileno(st->suspend_file), 0, SEEK_SET);
-    init_domain_config(&st->dc, "test_domain_create_restore",
-                       "resources/vmlinuz-4.0.4-301.fc22.x86_64",
-                       "resources/initrd.xen-4.0.4-301.fc22.x86_64",
-                       "resources/Fedora-Cloud-Base-22-20150521.x86_64.qcow2",
-                       "resources/cloudinit.iso");
+    init_domain_config(&st->dc, "test_domain_create_restore");
     libxl_domain_restore_params_init(&st->drp);
 }
 
