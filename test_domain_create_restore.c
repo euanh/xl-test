@@ -76,7 +76,7 @@ verify_cancelled(struct test *tc __attribute__((__unused__)), uint32_t domid, st
 {
     printf("libxl_domain_restore returned %d\n",
            ev.u.callback_event.rc);
-    assert(ev.u.callback_event.rc == ERROR_FAIL  /* XXX should be ERROR_CANCELLED */
+    assert(ev.u.callback_event.rc == ERROR_CANCELLED
            || ev.u.callback_event.rc == 0);
     assert(domid != (uint32_t) -2);
 
