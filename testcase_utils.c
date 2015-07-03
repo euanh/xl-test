@@ -75,7 +75,7 @@ int do_domain_suspend(struct test *t, uint32_t domid, int fd)
     t->ao_how.callback = generic_callback;
     t->ao_how.u.for_callback = t;
 
-    return libxl_domain_suspend(t->ctx, domid, fd, LIBXL_SUSPEND_LIVE, &t->ao_how);
+    return libxl_domain_suspend(t->ctx, domid, fd, 0, &t->ao_how);
 }
 
 int
