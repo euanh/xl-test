@@ -112,7 +112,7 @@ void *testcase(struct test *tc)
         wait_for(tc, EV_LIBXL_CALLBACK, &ev);
         printf("libxl_domain_restore returned %d\n",
                ev.u.callback_event.rc);
-        assert(ev.u.callback_event.rc == ERROR_FAIL  /* XXX should be ERROR_CANCELLED */
+        assert(ev.u.callback_event.rc == ERROR_CANCELLED
                || ev.u.callback_event.rc == 0);
         assert(domid != (uint32_t) -2);
 
