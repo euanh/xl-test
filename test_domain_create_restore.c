@@ -46,7 +46,7 @@ void setup_suite(struct test *tc, void **_state)
     printf("domain %d unpaused\n", domid);
 
     printf("waiting for domain to boot\n");
-    wait_for_n(tc, EV_EVENTLOOP, 10, &ev);	
+    wait_for_n(tc, EV_EVENTLOOP, 10, &ev);
 
     st->suspend_file = tmpfile();
     if (!(st->suspend_file)) {
@@ -101,25 +101,6 @@ verify_completed(struct test *tc, uint32_t domid, struct event ev)
     assert(rc == ERROR_NOTFOUND);
 }
 
-
-void
-teardown(struct test *tc, struct test_state *st)
-{
-    assert(st->domid);
-    libxl_domain_destroy(tc->ctx, st->domid, 0);
-    libxl_domain_config_dispose(&st->dc);
-}
-
-
-void
-teardown_suite(struct test *tc __attribute__((__unused__)),
-               struct test_state *st)
-{
-    fclose(st->suspend_file);
-    free(st);
-}
-
-
 bool
 execute(struct test *tc, struct test_state *st, int count)
 {
@@ -149,6 +130,24 @@ execute(struct test *tc, struct test_state *st, int count)
     verify_cancelled(tc, st->domid, ev);
     return true;
 }
+
+void
+teardown(struct test *tc, struct test_state *st)
+{
+    assert(st->domid);
+    libxl_domain_destroy(tc->ctx, st->domid, 0);
+    libxl_domain_config_dispose(&st->dc);
+}
+
+
+void
+teardown_suite(struct test *tc __attribute__((__unused__)),
+               struct test_state *st)
+{
+    fclose(st->suspend_file);
+    free(st);
+}
+
 
 void *testcase(struct test *tc)
 {
